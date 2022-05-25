@@ -7,21 +7,22 @@ import javax.swing.*;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
+import java.io.Serializable;
 
 /**
  * @author: Tianjia Chen
  * Student Number: 903737
  * Email: tianjiac@student.unimelb.edu.au
  */
-public class MainWindow extends JFrame implements MyBorder{
-    public UserGroup userGroup = UserGroup.ADMINISTRATOR;
+public class MainWindow extends JFrame implements MyBorder, Serializable {
+    public UserGroup userGroup;
 
     // Board layout center part:
     public Board board = new Board(this);
     public Display display = new Display();
 
     //The top menu bar
-    public MenuBar menuBar = new MenuBar(userGroup, this);
+    public WindowUI.MenuBar menuBar = new MenuBar(userGroup, this);
 
     // Right-hand side chat field
     public ChatField chatField = new ChatField();
@@ -30,7 +31,8 @@ public class MainWindow extends JFrame implements MyBorder{
 
     public BoardState state = BoardState.NO_PAINT;
 
-    public MainWindow() throws HeadlessException {
+    public MainWindow(UserGroup identification) throws HeadlessException {
+        this.userGroup = identification;
         setTitle("Draw Board");
         setSize(1800,1000);
         setDefaultCloseOperation(MainWindow.DISPOSE_ON_CLOSE);
@@ -73,21 +75,22 @@ public class MainWindow extends JFrame implements MyBorder{
     public void creatPaneBorder(JComponent component, String title) {
         component.setBorder(
                 BorderFactory.createTitledBorder(
-                        new LineBorder(MyBorder.borderColor,MyBorder.thickness),
+                        new LineBorder(borderColor, thickness),
                         title,
                         TitledBorder.CENTER,TitledBorder.TOP,
                         new Font("Droid Sans Mono",Font.PLAIN,18),
-                        MyBorder.fontColor));
+                        fontColor));
     }
-    private void undoAction() {
+    /*private void undoAction() {
         board.removeAll();
         int index = board.paintListener.getPath().size() - 1;
         board.paintListener.getPath().remove(index);
         board.repaint();
-    }
-
+    }*/
 
     public static void main(String[] args) {
-        MainWindow mainWindow = new MainWindow();
+        MainWindow mainWindow = new MainWindow(UserGroup.ADMINISTRATOR);
     }
+
+
 }

@@ -1,7 +1,5 @@
 package PaintFunction;
 
-import java.awt.*;
-
 /**
  * @author: Tianjia Chen
  * Student Number: 903737

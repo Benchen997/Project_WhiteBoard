@@ -1,15 +1,10 @@
 package WindowUI;
 
-import PaintFunction.Board;
-import PaintFunction.Shape;
 import Users.UserGroup;
-import jdk.jshell.execution.Util;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.io.*;
-import java.util.ArrayList;
 
 /**
  * @author: Tianjia Chen
@@ -23,7 +18,7 @@ public class MenuBar extends JMenuBar{
     JMenu tools = new JMenu("Tools");
     JMenu peers = new JMenu("Peers");
     MainWindow mainWindow;
-    //Board board;
+
 
     // The constructor
     public MenuBar(UserGroup userGroup, MainWindow mainWindow) {
@@ -80,8 +75,7 @@ public class MenuBar extends JMenuBar{
         undo.addActionListener(e -> undoAction());
         clear.addActionListener(e -> clearOnClick());
         size.addActionListener(e -> changeSize());
-
-        JColorChooser colorChooser = new JColorChooser();
+        color.addActionListener(e -> changeColor());
 
         pen.add(size);
         pen.add(color);
@@ -111,6 +105,10 @@ public class MenuBar extends JMenuBar{
 
     public void changeSize() {
         PenSizeDialog penSizeDialog = new PenSizeDialog(mainWindow);
+    }
+    public void changeColor() {
+        Color userSelectedColor = JColorChooser.showDialog(mainWindow,"please choose your color",Color.black);
+        mainWindow.board.setPenColor(userSelectedColor);
     }
 
     public void creatOnClick() {
@@ -144,7 +142,7 @@ public class MenuBar extends JMenuBar{
                 saveFile(true);
             }
             if(value == JOptionPane.NO_OPTION){
-                mainWindow.board.paintListener.getPath().clear();
+                //mainWindow.board.paintListener.getPath().clear();
                 mainWindow.board.repaint();
                 mainWindow.state = BoardState.WHITE_PAINT;
             }
@@ -153,7 +151,7 @@ public class MenuBar extends JMenuBar{
     }
     public void clearOnClick() {
         mainWindow.board.removeAll();
-        mainWindow.board.paintListener.getPath().clear();
+        //mainWindow.board.paintListener.getPath().clear();
         mainWindow.board.repaint();
     }
     public void saveOnClick() {

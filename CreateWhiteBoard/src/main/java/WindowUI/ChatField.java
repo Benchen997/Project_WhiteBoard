@@ -6,7 +6,6 @@ import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 
 /**
  * @author: Tianjia Chen
@@ -60,10 +59,10 @@ public class ChatField extends JPanel implements MyBorder{
     public void creatPaneBorder(JComponent component, String title) {
         component.setBorder(
                 BorderFactory.createTitledBorder(
-                        new LineBorder(MyBorder.borderColor,MyBorder.thickness),
+                        new LineBorder(borderColor, thickness),
                         title,
                         TitledBorder.CENTER,TitledBorder.TOP,
                         new Font("Droid Sans Mono",Font.PLAIN,18),
-                        MyBorder.fontColor));
+                        fontColor));
     }
 }

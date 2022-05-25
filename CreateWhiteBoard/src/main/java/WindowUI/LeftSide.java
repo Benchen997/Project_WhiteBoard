@@ -79,11 +79,11 @@ public class LeftSide extends JPanel implements MyBorder{
     public void creatPaneBorder(JComponent component, String title) {
         component.setBorder(
                 BorderFactory.createTitledBorder(
-                        new LineBorder(MyBorder.borderColor,MyBorder.thickness),
+                        new LineBorder(borderColor, thickness),
                         title,
                         TitledBorder.CENTER,TitledBorder.TOP,
                         new Font("Droid Sans Mono",Font.PLAIN,18),
-                        MyBorder.fontColor));
+                        fontColor));
     }
     private class ToolButtonListener implements ActionListener {
         @Override

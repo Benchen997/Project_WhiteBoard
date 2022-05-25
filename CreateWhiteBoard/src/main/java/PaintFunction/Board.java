@@ -8,8 +8,6 @@ import javax.swing.*;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 
 /**
@@ -24,6 +22,7 @@ public class Board extends JPanel implements MyBorder {
     public MainWindow mainWindow;
     public Graphics2D pen;
     private float penSize;
+    private Color penColor;
 
     // constructor
     public Board(MainWindow mainWindow) {
@@ -54,6 +53,10 @@ public class Board extends JPanel implements MyBorder {
         this.penSize = penSize;
     }
 
+    public void setPenColor(Color penColor) {
+        this.penColor = penColor;
+    }
+
     public String getCommandName() {
         return commandName;
     }
@@ -62,27 +65,29 @@ public class Board extends JPanel implements MyBorder {
         return penSize;
     }
 
+    public Color getPenColor() {
+        return penColor;
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-
         pen = (Graphics2D) g;
-
-
         // for each shape in the path drawn by mouse
 
-        for (int i = paintListener.index; i < paintListener.getPath().size(); i++) {
+        for (Shape shape: paintListener.getPath()) {
             // set current iteration point
-            ArrayList<Point> points = paintListener.getPath().get(i).getPointSet();
-
+            pen.setStroke(new BasicStroke(shape.getWidth()));
+            pen.setColor(shape.getColor());
+            ArrayList<Point> points = shape.getPointSet();
             // two point to form a line, so must greater or equal to 2
             if (points.size() >= 2) {
                 mainWindow.state = BoardState.HAS_PAINT;
-                pen.setColor(Color.black);
-                pen.setStroke(new BasicStroke(penSize));
+
                 Point start = points.get(0);
                 for (int j = 1; j < points.size(); j++) {
                     Point end = points.get(j);
+                    //pen.setStroke(new BasicStroke(penSize));
                     pen.drawLine(start.x,start.y,end.x,end.y);
                     start = end;
                 }
