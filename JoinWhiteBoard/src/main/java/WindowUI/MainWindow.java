@@ -22,7 +22,7 @@ public class MainWindow extends JFrame implements MyBorder, Serializable {
     public Display display = new Display();
 
     //The top menu bar
-    public WindowUI.MenuBar menuBar = new MenuBar(userGroup, this);
+    public MenuBar menuBar = new MenuBar(userGroup, this);
 
     // Right-hand side chat field
     public ChatField chatField = new ChatField();
@@ -87,7 +87,6 @@ public class MainWindow extends JFrame implements MyBorder, Serializable {
         board.paintListener.getPath().remove(index);
         board.repaint();
     }*/
-
 
 
 

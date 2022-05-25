@@ -48,6 +48,14 @@ public class Client {
 
             // send username
             dataOutputStream.writeUTF(username);
+            String join = dataInputStream.readUTF();
+            if (join.equals("no")) {
+                JOptionPane.showMessageDialog(null,
+                        "Your request is refused by administrator");
+                return;
+            }
+            JOptionPane.showMessageDialog(null,
+                        "Your are in!");
             Receive receive = new Receive();
             receive.start();
             System.out.println("please type your word");

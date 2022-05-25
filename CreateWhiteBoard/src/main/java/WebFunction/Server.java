@@ -5,6 +5,7 @@ import Users.UserGroup;
 import WindowUI.MainWindow;
 import org.json.simple.JSONArray;
 
+import javax.swing.*;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -28,15 +29,18 @@ public class Server {
     }
 
     public static void main(String[] args) {
+        MainWindow mainWindow = new MainWindow(UserGroup.ADMINISTRATOR);
         Server server = new Server();
-        server.init();
+        server.init(mainWindow);
 
 
     }
-    public void init() {
+    public void init(MainWindow mainWindow) {
         ServerSocket serverSocket = null;
         InputStream inputStream;
         DataInputStream dataInputStream;
+        OutputStream outputStream;
+        DataOutputStream dataOutputStream;
         try {
             // 1. create socket
             serverSocket = new ServerSocket(8888);
@@ -45,22 +49,30 @@ public class Server {
             while(true) {
                 Socket socket = serverSocket.accept();
                 inputStream = socket.getInputStream();
+                outputStream = socket.getOutputStream();
                 dataInputStream = new DataInputStream(inputStream);
+                dataOutputStream = new DataOutputStream(outputStream);
                 String username = dataInputStream.readUTF();
-                System.out.println(username);
-                clientCount += 1;
-                User user = new User(username,UserGroup.USER, socket,autoUid);
-                autoUid += 1;
-                clientSet.add(user);
+                int agree = JOptionPane.showConfirmDialog(mainWindow,
+                        "User " + username + " want to join your board, do you agree");
+                if (agree == JOptionPane.YES_OPTION) {
+                    dataOutputStream.writeUTF("yes");
+                    System.out.println(username);
+                    clientCount += 1;
+                    User user = new User(username,UserGroup.USER, socket,autoUid);
+                    autoUid += 1;
+                    clientSet.add(user);
 
-                Thread serverThread = new ServerThread(this,user);
-                serverThread.setName("Client " + clientCount);
-                System.out.println("currently, we have " + clientCount + " people access our server");
+                    Thread serverThread = new ServerThread(this,user);
+                    serverThread.setName("Client " + clientCount);
+                    System.out.println("currently, we have " + clientCount + " people access our server");
 
-                serverThread.start();
-
-
-
+                    serverThread.start();
+                }
+                else {
+                    dataOutputStream.writeUTF("no");
+                    socket.close();
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
