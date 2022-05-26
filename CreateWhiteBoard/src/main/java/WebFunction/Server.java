@@ -1,9 +1,10 @@
 package WebFunction;
 
+import PaintFunction.Shape;
 import Users.User;
 import Users.UserGroup;
-import WindowUI.MainWindow;
-import org.json.simple.JSONArray;
+import WindowUI.ServerWindow;
+import org.json.simple.JSONObject;
 
 import javax.swing.*;
 import java.io.*;
@@ -21,6 +22,8 @@ public class Server {
     public ArrayList<User> clientSet = new ArrayList<>();
     public int clientCount = 0;
     private int autoUid = 0;
+    public boolean running = true;
+    public ServerWindow serverWindow;
     //public Socket socket;
 
 
@@ -29,13 +32,14 @@ public class Server {
     }
 
     public static void main(String[] args) {
-        MainWindow mainWindow = new MainWindow(UserGroup.ADMINISTRATOR);
         Server server = new Server();
-        server.init(mainWindow);
+        server.init();
+
 
 
     }
-    public void init(MainWindow mainWindow) {
+    public void init() {
+        serverWindow = new ServerWindow(this);
         ServerSocket serverSocket = null;
         InputStream inputStream;
         DataInputStream dataInputStream;
@@ -46,15 +50,16 @@ public class Server {
             serverSocket = new ServerSocket(8888);
             // 2.waiting for response
 
-            while(true) {
+            while(running) {
                 Socket socket = serverSocket.accept();
                 inputStream = socket.getInputStream();
                 outputStream = socket.getOutputStream();
                 dataInputStream = new DataInputStream(inputStream);
                 dataOutputStream = new DataOutputStream(outputStream);
                 String username = dataInputStream.readUTF();
-                int agree = JOptionPane.showConfirmDialog(mainWindow,
+                int agree = JOptionPane.showConfirmDialog(serverWindow,
                         "User " + username + " want to join your board, do you agree");
+
                 if (agree == JOptionPane.YES_OPTION) {
                     dataOutputStream.writeUTF("yes");
                     System.out.println(username);
@@ -62,11 +67,9 @@ public class Server {
                     User user = new User(username,UserGroup.USER, socket,autoUid);
                     autoUid += 1;
                     clientSet.add(user);
-
                     Thread serverThread = new ServerThread(this,user);
                     serverThread.setName("Client " + clientCount);
                     System.out.println("currently, we have " + clientCount + " people access our server");
-
                     serverThread.start();
                 }
                 else {
@@ -84,4 +87,29 @@ public class Server {
             }
         }
     }
+    public void packing(String request, String data) {
+
+        JSONObject toAllClient = new JSONObject();
+
+        toAllClient.put("command",request);
+        toAllClient.put("data",data);
+      /*  if (request.equals("message")) {
+            toAllClient.put("data",data);
+        }
+        else if (request.equals("drawing")) {
+            toAllClient.put("data",((Shape) data).shapeToJSON());
+        }*/
+
+
+        for (User eachUser:clientSet) {
+            try {
+                eachUser.dataOutputStream.writeUTF(toAllClient.toJSONString());
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+
+    }
+
+
 }

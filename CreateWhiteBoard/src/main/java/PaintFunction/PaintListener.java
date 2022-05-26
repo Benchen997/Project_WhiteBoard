@@ -1,6 +1,6 @@
 package PaintFunction;
 
-import WindowUI.MainWindow;
+import WindowUI.ServerWindow;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -21,11 +21,12 @@ public class PaintListener implements MouseListener, MouseMotionListener, Action
     private Shape[] shapeArray;
     public int index = 0;
 
-    private MainWindow mainWindow;
+    private ServerWindow serverWindow;
     private Board board;
 
 
-    public PaintListener(Board board) {
+    public PaintListener(Board board,ServerWindow serverWindow) {
+        this.serverWindow = serverWindow;
         this.board = board;
     }
 
@@ -76,10 +77,11 @@ public class PaintListener implements MouseListener, MouseMotionListener, Action
         pressed = false;
         String command = board.getCommandName();
         if (!command.equals("default")) {
-            //Shape lastShape = path.get(path.size() - 1);
-            path.get(path.size() - 1).setEndX(e.getX());
-            path.get(path.size() - 1).setEndY(e.getY());
+            Shape lastShape = path.get(path.size() - 1);
+            lastShape.setEndX(e.getX());
+            lastShape.setEndY(e.getY());
             board.repaint();
+            packingDrawData(lastShape);
         }
     }
 
@@ -126,5 +128,13 @@ public class PaintListener implements MouseListener, MouseMotionListener, Action
 
     public ArrayList<Shape> getPath() {
         return path;
+    }
+    public void packingDrawData(Shape lastShape) {
+        /* json data format example
+        *  command : drawing
+        *  data: Shape object */
+        System.out.println(lastShape.getColor().toString());
+        serverWindow.server.packing("drawing",lastShape.shapeToJSON().toJSONString());
+
     }
 }

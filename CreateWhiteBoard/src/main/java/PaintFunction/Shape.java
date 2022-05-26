@@ -1,5 +1,7 @@
 package PaintFunction;
 
+import org.json.simple.JSONObject;
+
 import java.awt.*;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -85,4 +87,16 @@ public class Shape implements Serializable {
     }
 
 
+    public JSONObject shapeToJSON() {
+
+        JSONObject shapeInJson = new JSONObject();
+        shapeInJson.put("type",type);
+        shapeInJson.put("width",width);
+        shapeInJson.put("color", color.hashCode());
+        shapeInJson.put("start X", startX);
+        shapeInJson.put("start Y", startY);
+        shapeInJson.put("end X", endX);
+        shapeInJson.put("end Y", endY);
+        return shapeInJson;
+    }
 }

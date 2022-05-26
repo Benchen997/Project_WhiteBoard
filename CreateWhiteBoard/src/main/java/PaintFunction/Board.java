@@ -1,8 +1,8 @@
 package PaintFunction;
 
 import WindowUI.BoardState;
-import WindowUI.MainWindow;
 import WindowUI.MyBorder;
+import WindowUI.ServerWindow;
 
 import javax.swing.*;
 import javax.swing.border.LineBorder;
@@ -19,21 +19,23 @@ public class Board extends JPanel implements MyBorder {
     public PaintListener paintListener;
     private String commandName = "default";
     public JPopupMenu popupMenu = new JPopupMenu();
-    public MainWindow mainWindow;
+    public ServerWindow serverWindow;
     public Graphics2D pen;
     private float penSize;
     private Color penColor;
 
     // constructor
-    public Board(MainWindow mainWindow) {
-        this.mainWindow = mainWindow;
+    public Board(ServerWindow serverWindow) {
+        this.serverWindow = serverWindow;
         creatPaneBorder(this, "Draw Board");
         this.setBackground(Color.WHITE);
-        paintListener = new PaintListener(this);
+        paintListener = new PaintListener(this,serverWindow);
         this.addMouseListener(paintListener);
         this.addMouseMotionListener(paintListener);
         this.setPopupMenu();
         this.add(popupMenu);
+        this.setPenColor(Color.black);
+        this.setPenSize(1);
 
     }
 
@@ -88,7 +90,7 @@ public class Board extends JPanel implements MyBorder {
                     ArrayList<Point> points = shape.getPointSet();
                     // two point to form a line, so must greater or equal to 2
                     if (points.size() >= 2) {
-                        mainWindow.state = BoardState.HAS_PAINT;
+                        serverWindow.state = BoardState.HAS_PAINT;
                         Point start = points.get(0);
                         for (int j = 1; j < points.size(); j++) {
                             Point end = points.get(j);
@@ -99,15 +101,15 @@ public class Board extends JPanel implements MyBorder {
                     break;
                 case "rectangle":
                     pen.drawRect(x,y,w,h);
-                    mainWindow.state = BoardState.HAS_PAINT;
+                    serverWindow.state = BoardState.HAS_PAINT;
                     break;
                 case "circle":
                     pen.drawOval(x,y,w,h);
-                    mainWindow.state = BoardState.HAS_PAINT;
+                    serverWindow.state = BoardState.HAS_PAINT;
                     break;
                 case "line":
                     pen.drawLine(shape.getStartX(),shape.getStartY(),shape.getEndX(),shape.getEndY());
-                    mainWindow.state = BoardState.HAS_PAINT;
+                    serverWindow.state = BoardState.HAS_PAINT;
                     break;
                 case "triangle":
                     pen.drawLine(shape.getStartX(),shape.getStartY(),shape.getStartX(),shape.getEndY());

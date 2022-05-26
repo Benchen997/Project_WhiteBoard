@@ -1,12 +1,17 @@
 package UserAction;
 
 
+import PaintFunction.Shape;
+import Users.UserGroup;
+import WindowUI.ClientWindow;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 import javax.swing.*;
+import java.awt.*;
 import java.io.*;
 import java.net.Socket;
-import java.util.Scanner;
 
 /**
  * @author: Tianjia Chen
@@ -14,14 +19,14 @@ import java.util.Scanner;
  * Email: tianjiac@student.unimelb.edu.au
  */
 public class Client {
-    String username;
-    Socket socket;
-    InputStream inputStream;
-    DataInputStream dataInputStream;
-    Boolean connected = true;
-    OutputStream outputStream;
-    DataOutputStream dataOutputStream;
-
+    public String username;
+    public Socket socket;
+    private InputStream inputStream;
+    private DataInputStream dataInputStream;
+    public Boolean connected = true;
+    private OutputStream outputStream;
+    private DataOutputStream dataOutputStream;
+    private ClientWindow clientWindow;
     public static void main(String[] args) {
         Client client = new Client();
         client.username = JOptionPane.showInputDialog("Please enter your username");
@@ -34,7 +39,7 @@ public class Client {
     }
 
     public void connect() {
-        Scanner scanner = new Scanner(System.in);
+        //Scanner scanner = new Scanner(System.in);
         try {
             socket = new Socket("localhost",8888);
             //socket.bind();
@@ -56,21 +61,17 @@ public class Client {
             }
             JOptionPane.showMessageDialog(null,
                         "Your are in!");
-            Receive receive = new Receive();
+
+            // creat window object
+            clientWindow = new ClientWindow(UserGroup.USER, username,this);
+            Receive receive = new Receive(clientWindow);
             receive.start();
-            System.out.println("please type your word");
+            //System.out.println("please type your word");
 
             while (connected) {
 
-                String input = scanner.nextLine();
 
-                if (input.equals("exit")) {
-                    packing("message","request-to-exit");
-                    connected = false;
-                }
-                else {
-                    packing("message",input);
-                }
+
 
             }
 
@@ -81,7 +82,7 @@ public class Client {
             socket.close();
             dataInputStream.close();
             dataOutputStream.close();
-            //System.out.println("if i can really close them");
+
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -92,31 +93,105 @@ public class Client {
      * weather or not sending a message to server.
      */
     class Receive extends Thread {
+        ClientWindow clientWindow;
+        public Receive(ClientWindow clientWindow) {
+            this.clientWindow = clientWindow;
+        }
+
         @Override
         public void run() {
+            JSONParser parser = new JSONParser();
             while (connected) {
                 try {
                     if (dataInputStream.available() > 0 ) {
-                        String response = dataInputStream.readUTF();
-                        System.out.println(response);
+                        JSONObject serverCommand = (JSONObject) parser.parse(dataInputStream.readUTF());
+                        unpacking(serverCommand);
+                        /*String response = dataInputStream.readUTF();
+                        clientWindow.chatField.chatHistory.append(response);*/
                     }
-                } catch (IOException e) {
+                } catch (IOException | ParseException e) {
                     e.printStackTrace();
                 }
+
             }
         }
     }
 
-    public void packing(String request, Object data) throws IOException {
+    public void packing(String request, Object data) {
 
         JSONObject jsonObject = new JSONObject();
+
         jsonObject.put("command",request);
         jsonObject.put("data",data);
 
-        dataOutputStream.writeUTF(jsonObject.toJSONString());
-        dataOutputStream.flush();
+        try {
+            dataOutputStream.writeUTF(jsonObject.toJSONString());
+            dataOutputStream.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    public void unpacking(JSONObject serverCommand) {
+        String command = (String) serverCommand.get("command");
 
+        if (command.equals("message")) {
+            String data = (String) serverCommand.get("data");
+            switch (data) {
+                case "actively-stop-server":
+                    JOptionPane.showMessageDialog(clientWindow,
+                            "The administrator has close the window");
+                    System.exit(0);
+                    break;
+                case "new board":
+                    clientWindow.menuBar.creatOnClick();
+                    break;
+                default:
+                    clientWindow.chatField.chatHistory.append(data);
+            }
+
+        }
+        else if (command.equals("drawing")) {
+            Thread t1 = new Thread(()->{
+               unpackShape(serverCommand);
+            });
+            t1.setName("try to unpack data and give a shape");
+            t1.start();
+        }
 
     }
+    public void unpackShape(JSONObject serverCommand) {
+        String data = (String) serverCommand.get("data");
+        JSONParser shapeParser = new JSONParser();
+        try {
+            JSONObject shapeData = (JSONObject) shapeParser.parse(data);
+            Shape shape = new Shape((String) shapeData.get("type"));
+            //-----width of pen
+            double width = (double) shapeData.get("width");
+            System.out.println(width);
+            shape.setWidth((int) width);
+            // color of the shape
+            long c = (long) shapeData.get("color");
+            int rgb = getInt(c);
+            shape.setColor(new Color(rgb));
+            System.out.println(rgb);
+            // coordination relative to container
+            shape.setStartX(getInt((long) shapeData.get("start X")));
+            shape.setStartY(getInt((long) shapeData.get("start Y")));
+            shape.setEndX(getInt((long) shapeData.get("end X")));
+            shape.setEndY(getInt((long) shapeData.get("end Y")));
+            clientWindow.board.paintListener.getPath().add(shape);
+            clientWindow.board.repaint();
+
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+    }
+    public int getInt(long n) {
+        Long l = n;
+        int result = l.intValue();
+        return result;
+
+    }
+
 
 }

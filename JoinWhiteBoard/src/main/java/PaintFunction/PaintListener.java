@@ -1,6 +1,6 @@
 package PaintFunction;
 
-import WindowUI.MainWindow;
+import WindowUI.ClientWindow;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -21,7 +21,7 @@ public class PaintListener implements MouseListener, MouseMotionListener, Action
     private Shape[] shapeArray;
     public int index = 0;
 
-    private MainWindow mainWindow;
+    private ClientWindow clientWindow;
     private Board board;
 
 

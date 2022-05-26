@@ -1,14 +1,11 @@
 package WebFunction;
 
 import Users.User;
-import Users.UserGroup;
-import WindowUI.MainWindow;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import java.io.*;
-import java.net.Socket;
 import java.util.ArrayList;
 
 /**
@@ -49,19 +46,17 @@ public class ServerThread extends Thread{
             while (true) {
                 if (user.dataInputStream.available() > 0) {
                     JSONObject command = (JSONObject) parser.parse(user.dataInputStream.readUTF());
+
                     if (command.get("data").equals("request-to-exit") && command.get("command").equals("message")) {
                         user.dataOutputStream.writeUTF("Happy to see you again");
                         break;
                     }
                     String clientMessage = (String) command.get("data");
-                    System.out.println(this.getName() + "(" + user.getUsername() + ") : " + clientMessage);
-                    for (User eachUser: threadOwner.clientSet) {
-                        if (eachUser.getUid() == user.getUid()) {
-                            continue;
-                        }
-                        eachUser.dataOutputStream.writeUTF(user.getUsername() + " said " + clientMessage);
-                        eachUser.dataOutputStream.flush();
-                    }
+
+                    System.out.println(clientMessage);
+                    threadOwner.serverWindow.chatField.chatHistory.append(clientMessage);
+
+                    packing("message",clientMessage);
                 }
 
             }
@@ -79,5 +74,24 @@ public class ServerThread extends Thread{
             System.out.println(this.getName() + " has left");
         }
         //
+    }
+    public void packing(String request, Object data) {
+
+        JSONObject toAllClient = new JSONObject();
+
+        toAllClient.put("command",request);
+        toAllClient.put("data",data);
+
+        for (User eachUser: threadOwner.clientSet) {
+            if (eachUser.getUid() == user.getUid()) {
+                continue;
+            }
+            try {
+                eachUser.dataOutputStream.writeUTF(toAllClient.toJSONString());
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+
     }
 }
