@@ -1,6 +1,7 @@
 package PaintFunction;
 
 import WindowUI.ClientWindow;
+import org.json.simple.JSONObject;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -25,8 +26,9 @@ public class PaintListener implements MouseListener, MouseMotionListener, Action
     private Board board;
 
 
-    public PaintListener(Board board) {
+    public PaintListener(Board board, ClientWindow clientWindow) {
         this.board = board;
+        this.clientWindow = clientWindow;
     }
 
     // initial pen
@@ -38,7 +40,25 @@ public class PaintListener implements MouseListener, MouseMotionListener, Action
 
     @Override
     public void actionPerformed(ActionEvent e) {
+        if (e.getActionCommand().equals("confirm")) {
+            board.setUserText(board.textField.getText());
+            board.textField.setText(null);
+            board.popupMenu.setVisible(false);
+            System.out.println(board.getUserText());
+            Shape shape = new Shape("text box");
+            shape.setContent(board.getUserText());
+            shape.setColor(board.getPenColor());
+            shape.setWidth(board.getPenSize());
+            shape.setStartX(board.popX);
+            shape.setStartY(board.popY);
+            path.add(shape);
+            board.repaint();
+            Thread t = new Thread(()->{
+                packingTextData(shape);
+            });
+            t.start();
 
+        }
 
 
     }
@@ -49,9 +69,11 @@ public class PaintListener implements MouseListener, MouseMotionListener, Action
          * thus press + release = click
          * in addition, mouse click happen when you press button and release button at same
          * location */
-        System.out.println("mouse clicked");
-        if (e.getButton() == MouseEvent.BUTTON3) {
-            System.out.println("menu poped");
+        if (e.getButton() == MouseEvent.BUTTON1 && board.getCommandName().equals("text box")) {
+            System.out.println("mouse clicked");
+            board.popupMenu.show(e.getComponent(),e.getX(),e.getY());
+            board.popX = e.getX();
+            board.popY = e.getY();
         }
 
     }
@@ -59,7 +81,9 @@ public class PaintListener implements MouseListener, MouseMotionListener, Action
     @Override
     public void mousePressed(MouseEvent e) {
         String command = board.getCommandName();
-        if (e.getButton() == MouseEvent.BUTTON1 && ! command.equals("default")) {
+        if (e.getButton() == MouseEvent.BUTTON1
+                && ! command.equals("default")
+                && ! command.equals("text box")) {
             pressed = true;
             Shape shape = new Shape(command);
             shape.setColor(board.getPenColor());
@@ -68,6 +92,9 @@ public class PaintListener implements MouseListener, MouseMotionListener, Action
             shape.setStartY(e.getY());
             shape.getPointSet().add(e.getPoint());
             path.add(shape);
+            if (command.equals("pen")) {
+                packingPenData(shape);
+            }
         }
     }
 
@@ -75,11 +102,14 @@ public class PaintListener implements MouseListener, MouseMotionListener, Action
     public void mouseReleased(MouseEvent e) {
         pressed = false;
         String command = board.getCommandName();
-        if (!command.equals("default")) {
-            //Shape lastShape = path.get(path.size() - 1);
-            path.get(path.size() - 1).setEndX(e.getX());
-            path.get(path.size() - 1).setEndY(e.getY());
+        if (!command.equals("default") && ! command.equals("text box")) {
+            Shape lastShape = path.get(path.size() - 1);
+            lastShape.setEndX(e.getX());
+            lastShape.setEndY(e.getY());
             board.repaint();
+            if (!command.equals("pen")) {
+                packingDrawData(lastShape);
+            }
         }
     }
 
@@ -97,6 +127,9 @@ public class PaintListener implements MouseListener, MouseMotionListener, Action
                 ||command.equals("circle")
                 ||command.equals("line")) {
             board.setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));
+        }
+        else if (command.equals("text box")) {
+            board.setCursor(new Cursor(Cursor.TEXT_CURSOR));
         }
         else {
             board.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
@@ -116,6 +149,10 @@ public class PaintListener implements MouseListener, MouseMotionListener, Action
             Shape lastShape = path.get(path.size() - 1);
             lastShape.getPointSet().add(e.getPoint());
             board.repaint();
+            Thread senPenData = new Thread(()->{
+                packingPointData(e.getPoint());
+            });
+            senPenData.start();
         }
     }
 
@@ -124,7 +161,31 @@ public class PaintListener implements MouseListener, MouseMotionListener, Action
 
     }
 
+    public void setPath(ArrayList<Shape> path) {
+        this.path = path;
+    }
+
     public ArrayList<Shape> getPath() {
         return path;
+    }
+    public void packingDrawData(Shape lastShape) {
+        /* json data format example
+         *  command : drawing
+         *  data: Shape object */
+        System.out.println(lastShape.getColor().toString());
+        clientWindow.client.packing("drawing",lastShape.shapeToJSON().toJSONString());
+
+    }
+    public void packingPenData(Shape shape) {
+        clientWindow.client.packing("drawing",shape.penToJSON().toJSONString());
+    }
+    public void packingPointData(Point point) {
+        JSONObject jsonPoint = new JSONObject();
+        jsonPoint.put("x",point.x);
+        jsonPoint.put("y",point.y);
+        clientWindow.client.packing("points",jsonPoint.toJSONString());
+    }
+    public void packingTextData(Shape shape) {
+        clientWindow.client.packing("drawing",shape.textBoxToJSON().toJSONString());
     }
 }

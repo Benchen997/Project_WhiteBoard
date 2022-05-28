@@ -41,18 +41,16 @@ public class ClientWindow extends JFrame implements MyBorder, Serializable {
         this.userGroup = identification;
         this.client = client;
         setTitle( username + "'s " + "Draw Board");
-        setSize(1800,1000);
+        setSize(1500,800);
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         this.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
                 //super.windowClosing(e);
                 int result = JOptionPane.showConfirmDialog(null,
-                        "Are you sure you want leave?");
+                        "Are you sure you want leave?","Leaving",JOptionPane.YES_NO_OPTION);
                 if (result == JOptionPane.YES_OPTION) {
-
-
-                    client.packing("message","request-to-exit");
+                    client.packing("client command","request-to-exit");
                     client.connected = false;
                     System.exit(0);
                 }
@@ -118,7 +116,7 @@ public class ClientWindow extends JFrame implements MyBorder, Serializable {
         JMenu edit = new JMenu("Edit");
         JMenu help = new JMenu("Help");
         JMenu tools = new JMenu("Tools");
-        JMenu peers = new JMenu("Peers");
+        public JMenu peers = new JMenu("Peers");
         ClientWindow clientWindow;
 
 
@@ -168,8 +166,10 @@ public class ClientWindow extends JFrame implements MyBorder, Serializable {
         }
         private void setPeers() {
             peers.setFont(new Font("Droid Sans Mono",Font.PLAIN,18));
-            JMenuItem showPeers = new JMenuItem("Show current online peers");
-            peers.add(showPeers);
+            peers.setToolTipText("Show current online peers");
+            JMenuItem adm = new JMenuItem("Administrator");
+            peers.add(adm);
+            peers.addMouseListener(myActionListener);
         }
 
         public void creatOnClick() {
@@ -186,11 +186,15 @@ public class ClientWindow extends JFrame implements MyBorder, Serializable {
         }
 
     }
+
+    /**
+     * Left side of the GUI, contain 7 buttons and one slider for pen resize.
+     */
     class LeftSide extends JPanel {
         public ClientWindow clientWindow;
         public JToolBar letToolBar = new JToolBar();
         public JPanel leftBottom = new JPanel();
-        JButton[] buttons = new JButton[5];
+        JButton[] buttons = new JButton[6];
         //public PaintListener paintListener;
 
         public LeftSide(ClientWindow clientWindow) {
@@ -245,11 +249,18 @@ public class ClientWindow extends JFrame implements MyBorder, Serializable {
             colorPicker.addActionListener(e -> changeColor());
             colorPicker.setActionCommand("color-picker");
 
+            // text box button
+            JButton textBox = setButton("text box.png");
+            textBox.addActionListener(myActionListener);
+            textBox.addActionListener(e -> changeSelection(textBox));
+            textBox.setActionCommand("text box");
+
             buttons[0] = pen;
             buttons[1] = line;
             buttons[2] = rectangle;
             buttons[3] = triangle;
             buttons[4] = circle;
+            buttons[5] = textBox;
 
             letToolBar.add(pen);
             letToolBar.add(line);
@@ -257,9 +268,10 @@ public class ClientWindow extends JFrame implements MyBorder, Serializable {
             letToolBar.add(triangle);
             letToolBar.add(circle);
             letToolBar.add(colorPicker);
+            letToolBar.add(textBox);
         }
         private void setLeftBottom() {
-            JSlider sizeSlider = new JSlider(1,30,1);
+            JSlider sizeSlider = new JSlider(1,50,2);
             sizeSlider.setOrientation(SwingConstants.VERTICAL);
             sizeSlider.setToolTipText("Resize the pen");
             sizeSlider.addChangeListener(e -> changeSize(sizeSlider));
@@ -267,8 +279,9 @@ public class ClientWindow extends JFrame implements MyBorder, Serializable {
         }
         private JButton setButton(String filename) {
             URL url = this.getClass().getResource("/img/" + filename);
-            //button.addActionListener(e -> clientWindow.chatField.chatHistory.append(filename + "\n"));
-            return new JButton(new ImageIcon(Objects.requireNonNull(url)));
+            JButton jButton = new JButton(new ImageIcon(Objects.requireNonNull(url)));
+            jButton.setSize(50,50);
+            return jButton;
         }
         private void changeSelection(JButton thisButton) {
             for (JButton button:buttons) {
@@ -308,7 +321,7 @@ public class ClientWindow extends JFrame implements MyBorder, Serializable {
         }
     }
     public class ChatField extends JPanel {
-        public JTextArea input = new JTextArea(10,20);
+        public JTextArea input = new JTextArea(20,20);
         public JTextArea chatHistory = new JTextArea();
         public JScrollPane scrollPane = new JScrollPane(chatHistory);
         public JScrollPane inputPane = new JScrollPane(input);
@@ -329,7 +342,7 @@ public class ClientWindow extends JFrame implements MyBorder, Serializable {
             chatHistory.setToolTipText("chat history");
             chatHistory.setEditable(false);
             creatPaneBorder(scrollPane,"Chat");
-            scrollPane.setPreferredSize(new Dimension(100,750));
+            scrollPane.setPreferredSize(new Dimension(100,560));
         }
         private void setInput(){
             input.setToolTipText("please enter your message");

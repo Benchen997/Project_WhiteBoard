@@ -1,9 +1,7 @@
 package WindowUI;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
+import javax.swing.event.MenuListener;
+import java.awt.event.*;
 import java.io.IOException;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
@@ -13,7 +11,7 @@ import java.text.SimpleDateFormat;
  * Student Number: 903737
  * Email: tianjiac@student.unimelb.edu.au
  */
-public class MyActionListener implements ActionListener, KeyListener {
+public class MyActionListener extends MouseAdapter implements ActionListener, KeyListener {
     ClientWindow clientWindow;
     public MyActionListener(ClientWindow clientWindow) {
         this.clientWindow = clientWindow;
@@ -28,15 +26,17 @@ public class MyActionListener implements ActionListener, KeyListener {
             case "send message":
                 sendMessage();
                 break;
-            default:
-                Thread t1= new Thread(() -> {
-
-                    clientWindow.client.packing("message",command);
-
-                });
-                t1.start();
         }
     }
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+        if (e.getButton() == MouseEvent.BUTTON1) {
+            clientWindow.menuBar.peers.removeAll();
+            clientWindow.client.packing("client command","update peers");
+        }
+    }
+
     private void sendMessage() {
         String userInput = clientWindow.chatField.input.getText();
         SimpleDateFormat formatter= new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss z");

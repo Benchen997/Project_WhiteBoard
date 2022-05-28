@@ -1,12 +1,7 @@
 package WindowUI;
 
-import Users.User;
-import WindowUI.ServerWindow;
-import org.json.simple.JSONObject;
-
 import javax.swing.*;
 import java.awt.event.*;
-import java.io.IOException;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
 
@@ -31,17 +26,33 @@ public class ServerActionListener extends WindowAdapter implements ActionListene
         switch (actionCommand) {
             case "create":
                 Thread t = new Thread(()-> {
-                    serverWindow.server.packing("message","new board");
+                    serverWindow.server.packing("server command","new board");
                 });
                 t.start();
                 break;
             case "send message":
                 sendMessage();
                 break;
+            case "open":
+                serverWindow.server.packing("server command","open");
+                break;
             default:
                 break;
-
-
+        }
+        if (actionCommand.contains("kick")) {
+            StringBuilder username = new StringBuilder();
+            for (int i = 4; i < actionCommand.length(); i++) {
+                username.append(actionCommand.charAt(i));
+            }
+            System.out.println(username);
+            int value = JOptionPane.showConfirmDialog(serverWindow,
+                    "Are you sure kick this user",
+                    "Kick User",
+                    JOptionPane.YES_NO_OPTION);
+            if (value == JOptionPane.YES_OPTION) {
+                serverWindow.server.packToSingleUser("server command",
+                        "You have been kicked", String.valueOf(username));
+            }
         }
     }
 
@@ -66,11 +77,14 @@ public class ServerActionListener extends WindowAdapter implements ActionListene
     public void windowClosing(WindowEvent e) {
         //super.windowClosing(e);
         int result = JOptionPane.showConfirmDialog(null,
-                "Are you sure you want leave?");
+                "Are you sure you want leave?","Leaving",JOptionPane.YES_NO_OPTION);
         if (result == JOptionPane.YES_OPTION) {
-            serverWindow.server.packing("message","actively-stop-server");
+            serverWindow.server.packing("server command","actively-stop-server");
             serverWindow.server.running = false;
             System.exit(0);
+        }
+        else {
+            serverWindow.setVisible(true);
         }
     }
     private void sendMessage() {
@@ -87,5 +101,6 @@ public class ServerActionListener extends WindowAdapter implements ActionListene
         });
         t.start();
     }
+
 
 }

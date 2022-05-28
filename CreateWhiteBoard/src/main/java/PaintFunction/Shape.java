@@ -17,6 +17,7 @@ public class Shape implements Serializable {
     private float width;
     private Color color;
     private String type;
+    private String content;
 
     public Shape(String type) {
         this.type = type;
@@ -82,6 +83,14 @@ public class Shape implements Serializable {
         this.type = type;
     }
 
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
     public ArrayList<Point> getPointSet() {
         return pointSet;
     }
@@ -98,5 +107,22 @@ public class Shape implements Serializable {
         shapeInJson.put("end X", endX);
         shapeInJson.put("end Y", endY);
         return shapeInJson;
+    }
+    public JSONObject penToJSON() {
+        JSONObject penInJson = new JSONObject();
+        penInJson.put("type",type);
+        penInJson.put("width",width);
+        penInJson.put("color", color.hashCode());
+        return penInJson;
+    }
+    public JSONObject textBoxToJSON() {
+        JSONObject textBoxInJson = new JSONObject();
+        textBoxInJson.put("type",type);
+        textBoxInJson.put("content",content);
+        textBoxInJson.put("width",width);
+        textBoxInJson.put("color", color.hashCode());
+        textBoxInJson.put("start X", startX);
+        textBoxInJson.put("start Y", startY);
+        return textBoxInJson;
     }
 }

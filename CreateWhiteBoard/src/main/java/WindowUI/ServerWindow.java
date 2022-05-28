@@ -1,17 +1,16 @@
 package WindowUI;
 
 import PaintFunction.Board;
-import Users.UserGroup;
+import PaintFunction.Shape;
 import WebFunction.Server;
 
 import javax.swing.*;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.io.*;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Objects;
 
 /**
@@ -40,8 +39,8 @@ public class ServerWindow extends JFrame implements MyBorder, Serializable {
     public ServerWindow(Server server) throws HeadlessException {
         this.server = server;
         setTitle( "Administrator's" + "Draw Board");
-        setSize(1800,1000);
-        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        setSize(1500,800);
+        setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         this.addWindowListener(serverActionListener);
         // when the window is initialized, put it at middle of the screen.
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -52,19 +51,11 @@ public class ServerWindow extends JFrame implements MyBorder, Serializable {
         JPanel root = new JPanel();
         this.setContentPane(root);
         root.setLayout(new BorderLayout());
-
-
-
         // Top menu bar
-
         root.add(menuBar, BorderLayout.NORTH);
 
-
         // draw board init
-
         root.add(display,BorderLayout.CENTER);
-
-
 
         // left side of the frame
         leftSide.leftBottom.setPreferredSize(new Dimension(this.getWidth()/10,this.getHeight()/2));
@@ -72,11 +63,7 @@ public class ServerWindow extends JFrame implements MyBorder, Serializable {
 
         // right side of the frame
         root.add(chatField,BorderLayout.EAST);
-        //this.pack();
         setVisible(true);
-
-        //refresh ui
-        //SwingUtilities.updateComponentTreeUI(root);
     }
     private void undoAction() {
         board.removeAll();
@@ -98,12 +85,12 @@ public class ServerWindow extends JFrame implements MyBorder, Serializable {
     /**
      * Top menu bar initialization and button action set.
      */
-    class MenuBar extends JMenuBar{
+    public class MenuBar extends JMenuBar{
         JMenu file = new JMenu("File");
         JMenu edit = new JMenu("Edit");
         JMenu help = new JMenu("Help");
         JMenu tools = new JMenu("Tools");
-        JMenu peers = new JMenu("Peers");
+        public JMenu peers = new JMenu("Peers");
         ServerWindow serverWindow;
 
 
@@ -138,6 +125,10 @@ public class ServerWindow extends JFrame implements MyBorder, Serializable {
             //--------------------
             save.addActionListener(e -> saveOnClick());
             saveAS.addActionListener(e -> saveAsOnClick());
+            //--open
+            open.setActionCommand("open");
+            open.addActionListener(e->openOnClick());
+            open.addActionListener(serverActionListener);
             // pack buttons to menu
             file.add(create);
             file.addSeparator();
@@ -175,47 +166,52 @@ public class ServerWindow extends JFrame implements MyBorder, Serializable {
         }
         private void setPeers() {
             peers.setFont(new Font("Droid Sans Mono",Font.PLAIN,18));
-            JMenuItem showPeers = new JMenuItem("Show current online peers");
-            peers.add(showPeers);
+            peers.setToolTipText("Show current online peers");
+            JMenuItem adm = new JMenuItem("Administrator");
+            peers.add(adm);
         }
 
         public void creatOnClick() {
-
             // for administrator to create a new board
+
+            switch (serverWindow.state) {
+                case NO_PAINT -> {
+                    serverWindow.remove(serverWindow.display);
+                    serverWindow.add(serverWindow.board, BorderLayout.CENTER);
+                    serverWindow.state = BoardState.WHITE_PAINT;
+                    String result = JOptionPane.showInputDialog(serverWindow, "Please name your file.");
+                    if (result == null) {
+                        serverWindow.setTitle("Administrator's Draw Board - untitled");
+                    } else {
+                        serverWindow.setTitle("Administrator's Draw Board - " + result);
+                    }
+                    SwingUtilities.updateComponentTreeUI(serverWindow);
+                }
+                case WHITE_PAINT -> JOptionPane.showMessageDialog(serverWindow, "Already have board");
+                case HAS_PAINT -> askForAutoSave();
+            }
+        }
+        public void askForAutoSave() {
+
             if (serverWindow.state == BoardState.NO_PAINT) {
                 serverWindow.remove(serverWindow.display);
-                serverWindow.add(serverWindow.board,BorderLayout.CENTER);
+                serverWindow.add(serverWindow.board, BorderLayout.CENTER);
                 serverWindow.state = BoardState.WHITE_PAINT;
-                String result = JOptionPane.showInputDialog(serverWindow,"Please name your file.");
-                if (result == null) {
-                    serverWindow.setTitle("Administrator's Draw Board - untitled");
-                }
-                else {
-                    serverWindow.setTitle("Administrator's Draw Board - " +result);
-                }
-
-                SwingUtilities.updateComponentTreeUI(serverWindow);
-            }
-            // if the board is created but no paint on it.
-            else if (serverWindow.state == BoardState.WHITE_PAINT) {
-                JOptionPane.showMessageDialog(serverWindow,"Already have board");
-            }
-            // for painted board
-            else if (serverWindow.state == BoardState.HAS_PAINT) {
+            } else if (serverWindow.state == BoardState.HAS_PAINT) {
                 int value = JOptionPane.showConfirmDialog(serverWindow,
                         "Do you want to save current painting?",
                         "Current painting not saved!", JOptionPane.YES_NO_OPTION);
-                if(value == JOptionPane.YES_OPTION){
+                if (value == JOptionPane.YES_OPTION) {
                     System.out.println("save");
                     saveFile(true);
                 }
-                if(value == JOptionPane.NO_OPTION){
+                if (value == JOptionPane.NO_OPTION) {
                     serverWindow.board.paintListener.getPath().clear();
                     serverWindow.board.repaint();
                     serverWindow.state = BoardState.WHITE_PAINT;
                 }
             }
-
+            SwingUtilities.updateComponentTreeUI(serverWindow);
         }
         public void clearOnClick() {
             serverWindow.board.removeAll();
@@ -240,6 +236,12 @@ public class ServerWindow extends JFrame implements MyBorder, Serializable {
             }
 
         }
+        public void openOnClick() {
+            askForAutoSave();
+            Thread t = new Thread(ServerWindow.this::openFile);
+            t.setPriority(Thread.MAX_PRIORITY);
+            t.start();
+        }
 
         /**
          * @param autoSave true if button [save] clicked, then the file will save to default folder.
@@ -258,12 +260,10 @@ public class ServerWindow extends JFrame implements MyBorder, Serializable {
                 file = chooser.getSelectedFile();
 
             }
-
             if(file == null) {
                 JOptionPane.showMessageDialog(serverWindow, "You have not choose a file");
             }
             else {
-
                 try {
                     // serialize object
                     FileOutputStream fis = new FileOutputStream(file);
@@ -279,12 +279,44 @@ public class ServerWindow extends JFrame implements MyBorder, Serializable {
             }
         }
     }
+
+    /**
+     * open the java serialized object
+     */
+    public void openFile() {
+        try {
+
+            JFileChooser chooser = new JFileChooser();
+            chooser.showOpenDialog(null);
+            File file = chooser.getSelectedFile();
+
+            if(file==null){
+                JOptionPane.showMessageDialog(this, "You haven't choose a file");
+            }
+            else {
+
+                FileInputStream fileInputStream = new FileInputStream(file);
+                ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
+                ArrayList<Shape> paint = (ArrayList<Shape>) objectInputStream.readObject();
+                board.paintListener.setPath(paint);
+                objectInputStream.close();
+                board.repaint();
+                this.state = BoardState.HAS_PAINT;
+                this.server.packExistedPaint();
+            }
+        } catch (Exception e1) {
+            e1.printStackTrace();
+        }
+    }
+
+    /**
+     * The left sidebar of the main frame, consist of seven buttons and one slider for resize the pen.
+     */
     class LeftSide extends JPanel {
         public ServerWindow serverWindow;
         public JToolBar letToolBar = new JToolBar();
         public JPanel leftBottom = new JPanel();
-        JButton[] buttons = new JButton[5];
-        //public PaintListener paintListener;
+        JButton[] buttons = new JButton[6];
 
         public LeftSide(ServerWindow serverWindow) {
             this.serverWindow = serverWindow;
@@ -293,7 +325,6 @@ public class ServerWindow extends JFrame implements MyBorder, Serializable {
             this.add(letToolBar, BorderLayout.CENTER);
             this.setLeftBottom();
             this.add(leftBottom, BorderLayout.SOUTH);
-            //this.paintListener = new PaintListener(mainWindow);
 
         }
 
@@ -338,11 +369,18 @@ public class ServerWindow extends JFrame implements MyBorder, Serializable {
             colorPicker.addActionListener(e -> changeColor());
             colorPicker.setActionCommand("color-picker");
 
+            // text box button
+            JButton textBox = setButton("text box.png");
+            textBox.addActionListener(serverActionListener);
+            textBox.addActionListener(e -> changeSelection(textBox));
+            textBox.setActionCommand("text box");
+
             buttons[0] = pen;
             buttons[1] = line;
             buttons[2] = rectangle;
             buttons[3] = triangle;
             buttons[4] = circle;
+            buttons[5] = textBox;
 
             letToolBar.add(pen);
             letToolBar.add(line);
@@ -350,18 +388,21 @@ public class ServerWindow extends JFrame implements MyBorder, Serializable {
             letToolBar.add(triangle);
             letToolBar.add(circle);
             letToolBar.add(colorPicker);
+            letToolBar.add(textBox);
         }
         private void setLeftBottom() {
-            JSlider sizeSlider = new JSlider(1,30,1);
+            JSlider sizeSlider = new JSlider(1,50,2);
             sizeSlider.setOrientation(SwingConstants.VERTICAL);
             sizeSlider.setToolTipText("Resize the pen");
             sizeSlider.addChangeListener(e -> changeSize(sizeSlider));
             leftBottom.add(sizeSlider,BorderLayout.CENTER);
+            leftBottom.setPreferredSize(new Dimension(120,220));
         }
         private JButton setButton(String filename) {
             URL url = this.getClass().getResource("/img/" + filename);
-            //button.addActionListener(e -> mainWindow.chatField.chatHistory.append(filename + "\n"));
-            return new JButton(new ImageIcon(Objects.requireNonNull(url)));
+            JButton jButton = new JButton(new ImageIcon(Objects.requireNonNull(url)));
+            jButton.setSize(50,50);
+            return jButton;
         }
         private void changeSelection(JButton thisButton) {
             for (JButton button:buttons) {
@@ -381,7 +422,11 @@ public class ServerWindow extends JFrame implements MyBorder, Serializable {
         }
 
     }
-    class Display extends JPanel {
+
+    /**
+     * the static information page that waiting for opening new paint.
+     */
+    static class Display extends JPanel {
 
         public Display() {
             this.setBackground(Color.DARK_GRAY);
@@ -405,7 +450,7 @@ public class ServerWindow extends JFrame implements MyBorder, Serializable {
      * This class is located left side of the main frame, perform all the chat function
      */
     public class ChatField extends JPanel {
-        public JTextArea input = new JTextArea(10,20);
+        public JTextArea input = new JTextArea(20,20);
         public JTextArea chatHistory = new JTextArea();
         public JScrollPane scrollPane = new JScrollPane(chatHistory);
         public JScrollPane inputPane = new JScrollPane(input);
@@ -426,7 +471,7 @@ public class ServerWindow extends JFrame implements MyBorder, Serializable {
             chatHistory.setToolTipText("chat history");
             chatHistory.setEditable(false);
             creatPaneBorder(scrollPane,"Chat");
-            scrollPane.setPreferredSize(new Dimension(100,750));
+            scrollPane.setPreferredSize(new Dimension(100,560));
         }
         private void setInput(){
             input.setToolTipText("please enter your message");
@@ -441,10 +486,4 @@ public class ServerWindow extends JFrame implements MyBorder, Serializable {
         }
 
     }
-
-
-
-
-
-
 }

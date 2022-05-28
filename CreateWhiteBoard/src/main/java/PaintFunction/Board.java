@@ -23,6 +23,10 @@ public class Board extends JPanel implements MyBorder {
     public Graphics2D pen;
     private float penSize;
     private Color penColor;
+    private String userText;
+    public JTextField textField = new JTextField(20);
+    public int popX;
+    public int popY;
 
     // constructor
     public Board(ServerWindow serverWindow) {
@@ -40,10 +44,20 @@ public class Board extends JPanel implements MyBorder {
     }
 
     private void setPopupMenu() {
-        JMenuItem undo = new JMenuItem("undo");
-        JMenuItem clear = new JMenuItem("clear");
-        popupMenu.add(undo);
-        popupMenu.add(clear);
+        JButton confirm = new JButton("Confirm");
+        confirm.setActionCommand("confirm");
+        confirm.addActionListener(paintListener);
+        popupMenu.add(textField);
+        popupMenu.add(confirm);
+
+    }
+
+    public String getUserText() {
+        return userText;
+    }
+
+    public void setUserText(String userText) {
+        this.userText = userText;
     }
 
     public void setCommandName(String commandName) {
@@ -80,12 +94,19 @@ public class Board extends JPanel implements MyBorder {
             String type = shape.getType();
             pen.setStroke(new BasicStroke(shape.getWidth()));
             pen.setColor(shape.getColor());
+
+            if (type.equals("text box")) {
+                pen.setFont(new Font("Droid Sans Mono",Font.PLAIN,(int) shape.getWidth()));
+                pen.drawString(shape.getContent(),shape.getStartX(),shape.getStartY());
+                serverWindow.state = BoardState.HAS_PAINT;
+            }
+
             int x = Math.min(shape.getStartX(),shape.getEndX());
             int y = Math.min(shape.getStartY(),shape.getEndY());
             int w = Math.abs(shape.getEndX() - shape.getStartX());
             int h = Math.abs(shape.getEndY() - shape.getStartY());
             switch (type) {
-                case "pen":
+                case "pen" -> {
                     // set current iteration point
                     ArrayList<Point> points = shape.getPointSet();
                     // two point to form a line, so must greater or equal to 2
@@ -94,27 +115,29 @@ public class Board extends JPanel implements MyBorder {
                         Point start = points.get(0);
                         for (int j = 1; j < points.size(); j++) {
                             Point end = points.get(j);
-                            pen.drawLine(start.x,start.y,end.x,end.y);
+                            pen.drawLine(start.x, start.y, end.x, end.y);
                             start = end;
                         }
                     }
-                    break;
-                case "rectangle":
-                    pen.drawRect(x,y,w,h);
+                }
+                case "rectangle" -> {
+                    pen.drawRect(x, y, w, h);
                     serverWindow.state = BoardState.HAS_PAINT;
-                    break;
-                case "circle":
-                    pen.drawOval(x,y,w,h);
+                }
+                case "circle" -> {
+                    pen.drawOval(x, y, w, h);
                     serverWindow.state = BoardState.HAS_PAINT;
-                    break;
-                case "line":
-                    pen.drawLine(shape.getStartX(),shape.getStartY(),shape.getEndX(),shape.getEndY());
+                }
+                case "line" -> {
+                    pen.drawLine(shape.getStartX(), shape.getStartY(), shape.getEndX(), shape.getEndY());
                     serverWindow.state = BoardState.HAS_PAINT;
-                    break;
-                case "triangle":
-                    pen.drawLine(shape.getStartX(),shape.getStartY(),shape.getStartX(),shape.getEndY());
-                    pen.drawLine(shape.getStartX(),shape.getEndY(),shape.getEndX(),shape.getEndY());
-                    pen.drawLine(shape.getStartX(),shape.getStartY(),shape.getEndX(),shape.getEndY());
+                }
+                case "triangle" -> {
+                    pen.drawLine(shape.getStartX(), shape.getStartY(), shape.getStartX(), shape.getEndY());
+                    pen.drawLine(shape.getStartX(), shape.getEndY(), shape.getEndX(), shape.getEndY());
+                    pen.drawLine(shape.getStartX(), shape.getStartY(), shape.getEndX(), shape.getEndY());
+                    serverWindow.state = BoardState.HAS_PAINT;
+                }
             }
 
         }
